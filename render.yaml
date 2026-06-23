@@ -1,0 +1,41 @@
+# render.yaml — Deploy both backend API and frontend to Render
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Setup:
+#   1. Push this repo to GitHub
+#   2. Go to render.com → New → Blueprint
+#   3. Connect your repo — Render reads this file automatically
+#   4. Done. Both services deploy with one click.
+
+services:
+
+  # ── Backend: FastAPI ────────────────────────────────────────────────────────
+  - type: web
+    name: supply-chain-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install fastapi uvicorn
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+    healthCheckPath: /
+    autoDeploy: true
+
+  # ── Frontend: React/Vite (static site) ─────────────────────────────────────
+  - type: web
+    name: supply-chain-ui
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        # After backend deploys, replace with your actual Render backend URL:
+        # e.g. https://supply-chain-api.onrender.com
+        value: https://supply-chain-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    autoDeploy: true
